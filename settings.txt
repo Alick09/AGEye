@@ -1,0 +1,3 @@
+pause_time: 5.00
+pause_distance: 55.00
+snooze_time: 5.00
