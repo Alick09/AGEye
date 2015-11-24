@@ -7,7 +7,8 @@ Created 04.10.2015 by Alick
 """
 
 import sys
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import Qt
 
 
 class BlackScreen(QtGui.QWidget):
@@ -32,8 +33,13 @@ class BlackScreen(QtGui.QWidget):
     def initUI(self):
         QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
         
-        self.setToolTip('This program designed specially to save your eyes. Written by <b>AG</b> in 2015.')
+        # self.setToolTip('This program designed specially to save your eyes. Written by <b>AG</b> in 2015.')
         self.setStyleSheet('background-color: black;')
+        self.setWindowOpacity(0.9)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
         
         self.setWindowTitle('Black Screen #%s' % self.id)
-     
+
+    def closeEvent(self, QCloseEvent):
+        QCloseEvent.ignore()
+        pass

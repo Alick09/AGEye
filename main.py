@@ -14,7 +14,7 @@ from settings import Settings
 def main():
     app = QtGui.QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
-    s = Settings(app)    
+    s = Settings(app)
     sys.exit(app.exec_())
 
 
