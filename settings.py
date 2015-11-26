@@ -42,7 +42,7 @@ class AGEyeTray(QtGui.QSystemTrayIcon):
         self.menu.setEnabled(False)
         ans = QtGui.QMessageBox.about(None, "About", "This program written by " +
                                       "Abdulla Gaibullaev\n\nSite: ag-one.ru\nE-mail: " +
-                                      "AlickGZ9@gmail.com\n\nSpecially to save your eyes")
+                                      "AlickGZ9@gmail.com\n\nSpecially for your eyes")
         self.menu.setEnabled(True)
 
 
@@ -99,11 +99,18 @@ class Settings(QtGui.QWidget):
         sbs = ShortBlackScreen(self.app.desktop().screenGeometry(0), self)
         self.screens = bs + [mbs, sbs]
 
+    def update_blacks(self):
+        d = QtGui.QDesktopWidget()
+        bs = [BlackScreen(x, self.app.desktop().screenGeometry(x)) for x in xrange(1, d.screenCount())]
+        [x.close() for x in self.screens[:-2]]
+        self.screens = bs + self.screens[-2:]
+
     def switch(self, short=False):
         indices = range(len(self.screens))
         indices = indices[:-2] + indices[-1:] if short else indices[:-1]
 
         if self.ctd[short] == 0:
+            self.update_blacks()
             [self.screens[i].show() for i in indices]
             self.ctd[short] = 1
         else:
@@ -129,7 +136,7 @@ class Settings(QtGui.QWidget):
             if self.snooze_timer is not None: self.snooze_timer.stop()
             if self.ctd[0] == 1: self.switch(False)
         if self.short_pause_timer is not None: self.short_pause_timer.stop()
-        if self.next_short_timer is not None: self.next_short_timer.stop()
+        if self.next_short is not None: self.next_short.stop()
         if self.ctd[1] == 1: self.switch(True)
 
 

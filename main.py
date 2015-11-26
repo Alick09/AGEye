@@ -20,3 +20,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+#TODO: ESC-exit on short-break
+#TODO: Complex system with breaks. Simplify code understanding.
+#TODO: Long break warn (30 sec)
+#TODO: Snooze in tray
+#TODO: Detect activity

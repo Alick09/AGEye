@@ -7,6 +7,7 @@ Created 04.10.2015 by Alick
 """
 
 import os
+import re
 import random
 import datetime
 from PyQt4 import QtGui, QtCore
@@ -14,6 +15,7 @@ from PyQt4.QtCore import Qt
 from blackscreen import BlackScreen
 
 path = 'data/images'
+zero_image = 'zero.jpg'
 
 class ClickLabel(QtGui.QLabel):
     def __init__(self, parent):
@@ -28,21 +30,44 @@ class MainBlackScreen(BlackScreen):
         super(MainBlackScreen, self).__init__(0, geom)
         self.init_images()
 
+    def get_hours(self, s):
+        result = []
+        ranges = re.findall(r'(\d+)\s*-\s*(\d+)', s)
+        result += sum([range(int(a), int(b) + 1) for a, b in ranges], [])
+        s = re.sub(r'(\d+)\s*-\s*(\d+)', '', s)
+        result += map(int, re.findall(r'\d+', s))
+        return sorted(result)
+
+    def normalize_rules(self):
+        old_rules = self.rules
+        self.rules = {}
+        for i in self.images:
+            hours = range(24)
+            for regex, h in old_rules:
+                if re.match(regex, i) is not None:
+                    hours = h
+            self.rules[i] = hours
+
+
     def init_images(self):
         files = os.listdir(path)
         self.images = filter(lambda x: x.split('.')[-1] in ['jpg', 'png'], files)
-        self.rules = {}
-        if 'rules.txt' in files:
-            self.rules = {
-                x.split(':')[0].strip() : map(int, x.split(':')[1].strip().split()) 
-                for x in open(os.path.join(path, 'rules.txt')).read().split('\n')
-            }
+        self.rules = []
+        if 'time-rules.txt' in files:
+            self.rules = [
+                (x.split(':')[0].strip() , self.get_hours(x.split(':')[1].strip()))
+                for x in open(os.path.join(path, 'time-rules.txt')).read().split('\n')
+            ]
+        self.normalize_rules()
 
     def get_images(self):
         hour = datetime.datetime.now().hour
         available = [x for x in self.images if x not in self.rules or hour in self.rules[x]]
         random.shuffle(available)
-        return [os.path.join(path, x) for x in available]
+        index = 0
+        if zero_image in available:
+            index = available.index(zero_image)
+        return [os.path.join(path, x) for x in available], index
 
     def set_image(self, image):
         pm = QtGui.QPixmap(image)
@@ -50,8 +75,7 @@ class MainBlackScreen(BlackScreen):
         self.image.setPixmap(pm)
 
     def prepare(self):
-        self.session_images = self.get_images()
-        self.current_image = 0
+        self.session_images, self.current_image = self.get_images()
         self.set_image(self.session_images[0])
 
     def next_image(self):
@@ -82,8 +106,11 @@ class MainBlackScreen(BlackScreen):
 
         return 'background-color: #%02X%02X%02X;' % (r, g, b)
 
-    def initUI(self):
+    def prepareUI(self):
         BlackScreen.initUI(self)
+
+    def initUI(self):
+        self.prepareUI()
         self.mapper = QtCore.QSignalMapper()
 
         btn_size = 70

@@ -26,12 +26,13 @@ class ShortBlackScreen(MainBlackScreen):
 
     def get_images(self):
         random.shuffle(self.images)
-        return [os.path.join(path, 'short-breaks', x) for x in self.images]
+        return [os.path.join(path, 'short-breaks', x) for x in self.images], 0
 
     def prepare(self):
         self.next_image()
 
     def initUI(self):
+        self.prepareUI()
         self.image = QtGui.QLabel(self)
         self.image.setFixedHeight(400)
         self.image.setFixedWidth(400)
