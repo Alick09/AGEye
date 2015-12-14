@@ -76,33 +76,31 @@ class MainBlackScreen(BlackScreen):
 
     def prepare(self):
         self.session_images, self.current_image = self.get_images()
-        self.set_image(self.session_images[0])
+        self.set_image(self.session_images[self.current_image])
 
     def next_image(self):
         self.current_image = (self.current_image + 1) % len(self.session_images)
         self.set_image(self.session_images[self.current_image])
 
-    def short_name(self, msec):
-        seconds = msec/1000
+    def short_name(self, seconds):
+        sec = seconds
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
         return '{hours}{minutes}{seconds}'.format(
             hours = '%dh' % hours if hours else '',
             minutes = '%dm' % minutes if minutes else '',
-            seconds = '%ds' % seconds if seconds or msec < 1000 else ''
+            seconds = '%ds' % seconds if seconds or sec < 60 else ''
         )
 
-    def get_style_by_time(self, msec):
-        r, g, b = [128] * 3
-        feel_value = (msec/(5 * 60 * 60 * 1000.)) ** 0.5
+    def get_style_by_time(self, sec):
+        r, g, b = [30] * 3
+        feel_value = (sec/(3.0 * 60 * 60)) ** 0.3
         if feel_value > 1.0:
             b = 255
         else:
             shift = int(feel_value * 255)
-            if shift < 128:
-                g = 255 - shift
-            else:
-                r = shift
+            g = 255 - shift
+            r = shift
 
         return 'background-color: #%02X%02X%02X;' % (r, g, b)
 

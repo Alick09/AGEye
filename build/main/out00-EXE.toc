@@ -1,9 +1,0 @@
-('C:\\Users\\Alick\\Dropbox\\Important\\Projects\\Programming\\Python\\AGEye\\dist\\main.exe',
- False,
- False,
- 'icon.ico',
- None,
- [],
- None,
- False,
- 1448547482L)

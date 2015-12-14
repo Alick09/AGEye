@@ -11,6 +11,7 @@ from PyQt4 import QtGui, QtCore
 from blackscreen import BlackScreen
 from main_blackscreen import MainBlackScreen
 from short_blackscreen import ShortBlackScreen
+from break_object import Break
 
 
 class AGEyeTray(QtGui.QSystemTrayIcon):
@@ -52,17 +53,26 @@ class Settings(QtGui.QWidget):
         self.ctd = [0, 0]
         self.state = 0
         self.app = app
-        self.next_timer = None
-        self.pause_timer = None
-        self.snooze_timer = None
-        self.short_pause_timer = None
-        self.next_short = None
         self.init_settings()
 
         tray = AGEyeTray(QtGui.QIcon('icon.png'), self)
         self.make_blacks()
         tray.show()
+        self.init_breaks()
         self.start()
+
+    def init_breaks(self):
+        self.short_break = Break()
+        self.short_break.break_time = self.settings['short_pause_time']
+        self.short_break.break_distance = self.settings['short_pause_distance']
+        self.short_break.windows = self.screens[:-2] + self.screens[-1:]
+
+        self.main_break = Break()
+        self.main_break.break_time = self.settings['pause_time']
+        self.main_break.break_distance = self.settings['pause_distance']
+        self.main_break.windows = self.screens[:-1]
+        self.main_break.dependencies = [self.short_break]
+
 
     def switch_state(self):
         if self.state == 0:
@@ -79,7 +89,7 @@ class Settings(QtGui.QWidget):
             try:
                 parts = value.split('.')
                 a, b = map(int, parts)
-                return (a * 60 + b) * 1000
+                return (a * 60 + b)
             except:
                 pass
         return value
@@ -105,83 +115,23 @@ class Settings(QtGui.QWidget):
         [x.close() for x in self.screens[:-2]]
         self.screens = bs + self.screens[-2:]
 
-    def switch(self, short=False):
-        indices = range(len(self.screens))
-        indices = indices[:-2] + indices[-1:] if short else indices[:-1]
+        self.short_break.windows = self.screens[:-2] + self.screens[-1:]
+        self.main_break.windows = self.screens[:-1]
 
-        if self.ctd[short] == 0:
-            self.update_blacks()
-            [self.screens[i].show() for i in indices]
-            self.ctd[short] = 1
-        else:
-            [self.screens[i].hide() for i in indices]
-            self.ctd[short] = 0
-
-    def snooze_done(self):
-        if self.snooze_timer is not None: self.snooze_timer.stop()
-        self.pause()
-
-    def snooze(self, msec):
-        if self.pause_timer is not None: self.pause_timer.stop()
-        self.snooze_timer = QtCore.QTimer(self)
-        self.snooze_timer.start(int(msec))
-        self.switch()
-        self.snooze_timer.timeout.connect(self.snooze_done)
+    def snooze(self, sec):
+        self.main_break.snooze(sec)
 
     def stop(self, only_short=False):
-        if not only_short:
-            self.state = 0
-            if self.pause_timer is not None: self.pause_timer.stop()
-            if self.next_timer is not None: self.next_timer.stop()
-            if self.snooze_timer is not None: self.snooze_timer.stop()
-            if self.ctd[0] == 1: self.switch(False)
-        if self.short_pause_timer is not None: self.short_pause_timer.stop()
-        if self.next_short is not None: self.next_short.stop()
-        if self.ctd[1] == 1: self.switch(True)
-
+        self.main_break.stop()
+        self.short_break.stop()
 
     def start(self, only_short=False):
-        if not only_short:
-            self.state = 1
-
-            ms = self.settings['pause_distance']
-            self.next_timer = QtCore.QTimer(self)
-            self.next_timer.start(ms)
-            self.next_timer.timeout.connect(self.pause)
-
-        sms = self.settings['short_pause_distance']
-        self.next_short = QtCore.QTimer(self)
-        self.next_short.start(sms)
-        self.next_short.timeout.connect(self.short_pause)
-
-    def pause_done(self):
-        if self.pause_timer is not None: self.pause_timer.stop()
-        self.switch()
-        ms = self.settings['pause_distance']
-        self.next_timer = QtCore.QTimer(self)
-        self.next_timer.start(ms)
-        self.start(True)
-        self.next_timer.timeout.connect(self.pause)
-
-    def short_pause_done(self):
-        if self.short_pause_timer is not None: self.short_pause_timer.stop()
-        self.switch(True)
+        self.main_break.start()
+        self.short_break.start()
 
     def pause(self):
-        if self.next_timer is not None: self.next_timer.stop()
-        ms = self.settings['pause_time']
-        self.pause_timer = QtCore.QTimer(self)
-        self.pause_timer.start(ms)
-        self.switch()
-        self.pause_timer.timeout.connect(self.pause_done)
-        self.stop(True)
+        self.main_break.try_show(force=True)
 
-    def short_pause(self):
-        ms = self.settings['short_pause_time']
-        self.short_pause_timer = QtCore.QTimer(self)
-        self.short_pause_timer.start(ms)
-        self.switch(True)
-        self.short_pause_timer.timeout.connect(self.short_pause_done)
 
     def closeEvent(self, event):
         [x.close() for x in self.screens]
@@ -190,5 +140,4 @@ class Settings(QtGui.QWidget):
 
 if __name__ == '__main__':
     from main import main
-
     main()
