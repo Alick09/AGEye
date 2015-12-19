@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-Text Copy project for mom.
-Created 04.10.2015 by Alick
+Project made to save your eyes.
+Created 14.11.2015 by Abdulla Gaibullaev.
+Site: http://ag-one.ru
 """
 
 import os
@@ -13,24 +14,75 @@ import datetime
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 from blackscreen import BlackScreen
+import settings
 
-path = 'data/images'
-zero_image = 'zero.jpg'
 
 class ClickLabel(QtGui.QLabel):
+    """
+    ==========================
+    Clickable label.
+    ==========================
+    """
     def __init__(self, parent):
         QtGui.QLabel.__init__(self, parent)
 
     def mouseReleaseEvent(self, ev):
         self.emit(QtCore.SIGNAL('clicked()'))
 
+
 class MainBlackScreen(BlackScreen):
+    """
+    ============================================================
+    This class implements long break main window.
+    Windows with image and several buttons (snooze buttons).
+
+    This class uses images and text file with time rules.
+    Images in data/images and here is text file time-rules.txt
+
+    time-rules.txt contain rules for showing particular images in particular hours.
+    Example:
+        .* : 8 - 23
+        bed : 0 - 6
+
+    (Regular expressions are allowed.)
+    Single rule have such syntax:
+        <regular expression for image name> : <hours>
+
+        <hours> can be:
+            0 - 6
+            0 - 3, 5 - 12
+            1, 3, 5, 7, 9
+            3 - 23
+
+        but couldn't be:
+            1 - 24 (0, not 24, use 0 - 23)
+            22 - 0 (in x - y rule x must be less than y, use 22, 23, 0)
+            <empty>
+
+    If image will not be in rules, 0 - 23 rule will be applied by default.
+
+    Usage - see blackscreen.py
+    ==============================================================
+    """
+
+    current_image = 0
+    path = settings.images_path
+    zero_image = settings.zero_image_name
+
     def __init__(self, geom, settings):
+        """
+        :param geom: param from blackscreen.py
+        :param settings: AGEye instance
+        """
+        BlackScreen.__init__(self, 0, geom)
         self.settings = settings
-        super(MainBlackScreen, self).__init__(0, geom)
         self.init_images()
 
     def get_hours(self, s):
+        """
+        :param s: string of time rules (0 - 6, 14 - 16, 22, 23)
+        :return: list of hours [0, 1, 2, 3, 4, 5, 6, 14, 15, 16, 22, 23]
+        """
         result = []
         ranges = re.findall(r'(\d+)\s*-\s*(\d+)', s)
         result += sum([range(int(a), int(b) + 1) for a, b in ranges], [])
@@ -39,6 +91,9 @@ class MainBlackScreen(BlackScreen):
         return sorted(result)
 
     def normalize_rules(self):
+        """
+        finds rules for each images (uses last matching rule)
+        """
         old_rules = self.rules
         self.rules = {}
         for i in self.images:
@@ -50,24 +105,30 @@ class MainBlackScreen(BlackScreen):
 
 
     def init_images(self):
-        files = os.listdir(path)
-        self.images = filter(lambda x: x.split('.')[-1] in ['jpg', 'png'], files)
+        """
+        reads all images and inits normalized rules
+        """
+        files = os.listdir(self.path)
+        self.images = filter(lambda x: x.split('.')[-1] in settings.image_formats, files)
         self.rules = []
-        if 'time-rules.txt' in files:
+        if os.path.isfile(settings.time_rules_path):
             self.rules = [
                 (x.split(':')[0].strip() , self.get_hours(x.split(':')[1].strip()))
-                for x in open(os.path.join(path, 'time-rules.txt')).read().split('\n')
+                for x in open(settings.time_rules_path).read().split('\n')
             ]
         self.normalize_rules()
 
     def get_images(self):
+        """
+        :return: all available images (by time rule) for now.
+        """
         hour = datetime.datetime.now().hour
         available = [x for x in self.images if x not in self.rules or hour in self.rules[x]]
         random.shuffle(available)
         index = 0
-        if zero_image in available:
-            index = available.index(zero_image)
-        return [os.path.join(path, x) for x in available], index
+        if self.zero_image in available:
+            index = available.index(self.zero_image)
+        return [os.path.join(self.path, x) for x in available], index
 
     def set_image(self, image):
         pm = QtGui.QPixmap(image)
@@ -82,17 +143,25 @@ class MainBlackScreen(BlackScreen):
         self.current_image = (self.current_image + 1) % len(self.session_images)
         self.set_image(self.session_images[self.current_image])
 
-    def short_name(self, seconds):
+    @staticmethod
+    def short_name(seconds):
         sec = seconds
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
         return '{hours}{minutes}{seconds}'.format(
-            hours = '%dh' % hours if hours else '',
-            minutes = '%dm' % minutes if minutes else '',
-            seconds = '%ds' % seconds if seconds or sec < 60 else ''
+            hours='%dh' % hours if hours else '',
+            minutes='%dm' % minutes if minutes else '',
+            seconds='%ds' % seconds if seconds or sec < 60 else ''
         )
 
     def get_style_by_time(self, sec):
+        """
+        :param sec: seconds
+        :return: css background rule
+
+        Long snooze is less preferred. Therefore appropriate buttons will be RED!
+        Short snooze will be green.
+        """
         r, g, b = [30] * 3
         feel_value = (sec/(3.0 * 60 * 60)) ** 0.3
         if feel_value > 1.0:
@@ -144,8 +213,3 @@ class MainBlackScreen(BlackScreen):
         grid.addWidget(self.image, 2, 1)
 
         self.setLayout(grid)
-
-
-if __name__ == '__main__':
-    from main import main
-    main()

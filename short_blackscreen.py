@@ -2,31 +2,39 @@
 # -*- coding: utf-8 -*-
 
 """
-Text Copy project for mom.
-Created 04.10.2015 by Alick
+Project made to save your eyes.
+Created 23.11.2015 by Abdulla Gaibullaev.
+Site: http://ag-one.ru
 """
 
 import os
 import random
-import datetime
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import Qt
+from PyQt4 import QtGui
 from main_blackscreen import MainBlackScreen
+import settings
 
-path = 'data/images'
 
 class ShortBlackScreen(MainBlackScreen):
+    """
+    =====================================================
+    This is a implementation of short break main window.
+    This window (by default) shows 5 seconds without any chance to snooze or canceling.
+    =====================================================
+    """
+
+    path = settings.short_images_path
+
     def __init__(self, geom, settings):
         MainBlackScreen.__init__(self, geom, settings)
         MainBlackScreen.prepare(self)
 
     def init_images(self):
-        files = os.listdir(os.path.join(path, 'short-breaks'))
+        files = os.listdir(self.path)
         self.images = filter(lambda x: x.split('.')[-1] in ['jpg', 'png'], files)
 
     def get_images(self):
         random.shuffle(self.images)
-        return [os.path.join(path, 'short-breaks', x) for x in self.images], 0
+        return [os.path.join(self.path, x) for x in self.images], 0
 
     def prepare(self):
         self.next_image()
@@ -47,8 +55,3 @@ class ShortBlackScreen(MainBlackScreen):
         grid.addWidget(self.image, 1, 1)
 
         self.setLayout(grid)
-
-
-if __name__ == '__main__':
-    from main import main
-    main()
