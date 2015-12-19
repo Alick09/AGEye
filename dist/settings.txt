@@ -1,5 +1,0 @@
-pause_time: 5.00
-pause_distance: 55.00
-short_pause_time: 0.05
-short_pause_distance: 10.00
-snooze_time: 0.15, 2.00, 5.00, 60.0, 120.0
