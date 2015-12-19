@@ -74,8 +74,8 @@ class MainBlackScreen(BlackScreen):
         :param geom: param from blackscreen.py
         :param settings: AGEye instance
         """
-        BlackScreen.__init__(self, 0, geom)
         self.settings = settings
+        BlackScreen.__init__(self, 0, geom)
         self.init_images()
 
     def get_hours(self, s):

@@ -1,5 +1,8 @@
 *.pyc
 .idea/*
-data/*
 dist/*
 build/*
+HOW_TO_COMPILE.txt
+icon.psd
+main.spec
+data/images/ignore/
