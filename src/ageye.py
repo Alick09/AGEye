@@ -74,7 +74,7 @@ class AGEye(QtGui.QWidget):
         self.main_break.break_time = self.settings['pause_time']
         self.main_break.break_distance = self.settings['pause_distance']
         self.main_break.windows = self.screens[:-1]
-        self.main_break.dependencies = [self.short_break]
+        self.main_break.children = [self.short_break]
 
 
     def switch_state(self):
